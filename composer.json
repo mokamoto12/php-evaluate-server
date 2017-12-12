@@ -1,0 +1,14 @@
+{
+    "name": "mokamoto12/php-eval-server",
+    "type": "project",
+    "require": {
+        "psy/psysh": "^0.8.15"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "mokamoto12",
+            "email": "mokamoto1208@gmail.com"
+        }
+    ]
+}
