@@ -2,7 +2,11 @@
 
 require_once(__DIR__ . '/../vendor/autoload.php');
 
-@$psysh = new Psy\Shell();
-$output = new Symfony\Component\Console\Output\StreamOutput(fopen('php://output', 'w'));
-$app = new Mokamoto12\Evaluate\Application($psysh, $output, $_REQUEST['eval']);
+use Psy\Shell;
+use Symfony\Component\Console\Output\StreamOutput;
+use Mokamoto12\Evaluate\Application;
+
+@$psysh = new Shell();
+$output = new StreamOutput(fopen('php://output', 'w'));
+$app = new Application($psysh, $output, $_REQUEST['eval']);
 $app->eval();
