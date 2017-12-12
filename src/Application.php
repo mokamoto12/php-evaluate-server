@@ -14,18 +14,20 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Application
 {
     /**
-     * @var OutputInterface
+     * @var Shell
      */
-    private $output;
+    private $psysh;
 
     /**
      * Application constructor.
      *
+     * @param Shell $psysh
      * @param OutputInterface $output
      */
-    public function __construct(OutputInterface $output)
+    public function __construct(Shell $psysh, OutputInterface $output)
     {
-        $this->output = $output;
+        $psysh->setOutput($output);
+        $this->psysh = $psysh;
     }
 
     /**
@@ -36,41 +38,39 @@ class Application
         if (!isset($request['eval'])) {
             return;
         }
-        @$psysh = new Shell();
-        $psysh->setOutput($this->output);
-        $psysh->addCode($request['eval']);
+        $this->psysh->addCode($request['eval']);
         try {
             // evaluate the current code buffer
             ob_start(
-                array($psysh, 'writeStdout'),
+                array($this->psysh, 'writeStdout'),
                 version_compare(PHP_VERSION, '5.4', '>=') ? 1 : 2
             );
 
-            set_error_handler(array($psysh, 'handleError'));
-            $return = eval($psysh->flushCode() ?: Loop::NOOP_INPUT);
+            set_error_handler(array($this->psysh, 'handleError'));
+            $return = eval($this->psysh->flushCode() ?: Loop::NOOP_INPUT);
             restore_error_handler();
 
             ob_end_flush();
 
-            $psysh->writeReturnValue($return);
-        } catch (\TypeError $_e) {
-            restore_error_handler();
-            if (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-            $psysh->writeException(TypeErrorException::fromTypeError($_e));
-        } catch (\Error $_e) {
-            restore_error_handler();
-            if (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-            $psysh->writeException(ErrorException::fromError($_e));
-        } catch (\Exception $_e) {
-            restore_error_handler();
-            if (ob_get_level() > 0) {
-                ob_end_clean();
-            }
-            $psysh->writeException($_e);
+            $this->psysh->writeReturnValue($return);
+        } catch (\TypeError $e) {
+            $this->terminateWith(TypeErrorException::fromTypeError($e));
+        } catch (\Error $e) {
+            $this->terminateWith(ErrorException::fromError($e));
+        } catch (\Exception $e) {
+            $this->terminateWith($e);
         }
+    }
+
+    /**
+     * @param \Exception $exception
+     */
+    private function terminateWith(\Exception $exception)
+    {
+        restore_error_handler();
+        if (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        $this->psysh->writeException($exception);
     }
 }
