@@ -10,5 +10,10 @@
             "name": "mokamoto12",
             "email": "mokamoto1208@gmail.com"
         }
-    ]
+    ],
+    "autoload": {
+      "psr-4": {
+        "Mokamoto12\\Evaluate\\": "src"
+      }
+    }
 }
