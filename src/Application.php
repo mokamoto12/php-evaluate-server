@@ -23,17 +23,19 @@ class Application
      *
      * @param Shell $psysh
      * @param OutputInterface $output
-     * @param string $code
      */
-    public function __construct(Shell $psysh, OutputInterface $output, string $code)
+    public function __construct(Shell $psysh, OutputInterface $output)
     {
         $psysh->setOutput($output);
-        $psysh->addCode($code);
         $this->psysh = $psysh;
     }
 
-    public function eval()
+    /**
+     * @param $code
+     */
+    public function eval($code)
     {
+        $this->psysh->addCode($code);
         try {
             // evaluate the current code buffer
             ob_start(
