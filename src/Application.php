@@ -35,8 +35,8 @@ class Application
      */
     public function eval($code)
     {
-        $this->psysh->addCode($code);
         try {
+            $this->psysh->addCode($code);
             // evaluate the current code buffer
             ob_start(
                 array($this->psysh, 'writeStdout'),
