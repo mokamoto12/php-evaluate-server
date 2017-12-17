@@ -35,39 +35,39 @@ class Application
      */
     public function eval($code)
     {
-        try {
-            $this->psysh->addCode($code);
-            // evaluate the current code buffer
-            ob_start(
-                array($this->psysh, 'writeStdout'),
-                version_compare(PHP_VERSION, '5.4', '>=') ? 1 : 2
-            );
+        (function (Shell $psysh) use ($code) {
+            $handle = function (\Exception $exception) use ($psysh) {
+                restore_error_handler();
+                if (ob_get_level() > 0) {
+                    ob_end_clean();
+                }
+                $psysh->writeException($exception);
+            };
 
-            set_error_handler(array($this->psysh, 'handleError'));
-            $return = eval($this->psysh->flushCode() ?: Loop::NOOP_INPUT);
-            restore_error_handler();
+            try {
+                $psysh->addCode($code);
 
-            ob_end_flush();
+                ob_start(function (string $out) {
+                    if ($out !== '' && substr($out, -1) !== "\n") {
+                        return $out . "⏎\n";
+                    }
+                    return $out;
+                });
 
-            $this->psysh->writeReturnValue($return);
-        } catch (\TypeError $e) {
-            $this->terminateWith(TypeErrorException::fromTypeError($e));
-        } catch (\Error $e) {
-            $this->terminateWith(ErrorException::fromError($e));
-        } catch (\Exception $e) {
-            $this->terminateWith($e);
-        }
-    }
+                set_error_handler(array($psysh, 'handleError'));
+                $return = eval($psysh->flushCode() ?: Loop::NOOP_INPUT);
+                restore_error_handler();
 
-    /**
-     * @param \Exception $exception
-     */
-    private function terminateWith(\Exception $exception)
-    {
-        restore_error_handler();
-        if (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        $this->psysh->writeException($exception);
+                ob_end_flush();
+
+                $psysh->writeReturnValue($return);
+            } catch (\TypeError $e) {
+                $handle(TypeErrorException::fromTypeError($e));
+            } catch (\Error $e) {
+                $handle(ErrorException::fromError($e));
+            } catch (\Exception $e) {
+                $handle($e);
+            }
+        })->bindTo(null, null)($this->psysh);
     }
 }

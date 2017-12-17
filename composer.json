@@ -15,5 +15,16 @@
       "psr-4": {
         "Mokamoto12\\Evaluate\\": "src"
       }
+    },
+    "autoload-dev": {
+      "psr-4": {
+        "Mokamoto12\\Evaluate\\": "tests"
+      }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^6.5"
+    },
+    "scripts": {
+        "test": "phpunit"
     }
 }
