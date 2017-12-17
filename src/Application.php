@@ -14,6 +14,11 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Application
 {
     /**
+     * @var OutputInterface
+     */
+    private $output;
+
+    /**
      * @var Shell
      */
     private $psysh;
@@ -27,6 +32,7 @@ class Application
     public function __construct(Shell $psysh, OutputInterface $output)
     {
         $psysh->setOutput($output);
+        $this->output = $output;
         $this->psysh = $psysh;
     }
 
@@ -35,13 +41,13 @@ class Application
      */
     public function eval($code)
     {
-        (function (Shell $psysh) use ($code) {
-            $handle = function (\Exception $exception) use ($psysh) {
+        (function (Shell $psysh, OutputInterface $output) use ($code) {
+            $handle = function (\Exception $exception) use ($psysh, $output) {
                 restore_error_handler();
                 if (ob_get_level() > 0) {
                     ob_end_clean();
                 }
-                $psysh->writeException($exception);
+                $output->writeln($exception->getMessage());
             };
 
             try {
@@ -54,7 +60,9 @@ class Application
                     return $out;
                 });
 
-                set_error_handler(array($psysh, 'handleError'));
+                set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline) {
+                    ErrorException::throwException($errno, $errstr, '', $errline);
+                });
                 $return = eval($psysh->flushCode() ?: Loop::NOOP_INPUT);
                 restore_error_handler();
 
@@ -68,6 +76,6 @@ class Application
             } catch (\Exception $e) {
                 $handle($e);
             }
-        })->bindTo(null, null)($this->psysh);
+        })->bindTo(null, null)($this->psysh, $this->output);
     }
 }

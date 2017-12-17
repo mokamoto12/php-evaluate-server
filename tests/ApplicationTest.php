@@ -77,9 +77,9 @@ _EXPECT
         $this->app->eval('declare(strict_types=1);(function (int $n){})("1")');
     }
 
-    public function testError()
+    public function testWarning()
     {
-        $this->expectOutputString("TypeError: test message\n");
-        $this->app->eval('throw new TypeError("test message")');
+        $this->expectOutputString("PHP Notice:  Use of undefined constant A - assumed 'A' on line 1\n");
+        $this->app->eval('A');
     }
 }
